@@ -1,0 +1,225 @@
+<?php
+session_start();
+require_once '../util/Util.php';
+require_once '../model_controle/UsuarioControle.php';
+require_once '../model/Usuario.php';
+$form = null;
+$img_perfil = Util::DIR_IMAGEM_USUARIO_PADRAO;
+if (isset($_GET['add'])) {
+    if (isset($_SESSION['user'])) {
+        $form = (object) $_SESSION['user'];        
+       if(file_exists(Util::DIR_IMAGEM_USUARIO.$form->img_perfil))
+        $preview_img = Util::DIR_IMAGEM_USUARIO.$form->img_perfil;
+       
+    }
+}else {
+//em caso de falha o objeto nunca será null
+    $novo_usuario = array(
+    'id' => 0,
+    'nome' => '',
+    'sobrenome' => '',
+    'dt_nascimento' => '',
+    'status' => '',
+    'uf' => 0,
+    'cidade' => 0,
+    'endereco' => '',
+    'telefone' => '',
+    'img_perfil' => Util::DIR_IMAGEM_USUARIO_PADRAO,
+    'email' => '',
+    'username' => '');
+
+    $form = (object) $novo_usuario;
+}
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+    <head>
+        <link rel="shortcut icon" href="/imagens/missao_icon.png" type="image/x-icon" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <link rel="stylesheet" href="../css/style.css" type="text/css"/>
+        <script src="../script/ajax.js" type="text/javascript"></script>
+        <script src="../script/js.js" type="text/javascript"></script>
+        <script src="../script/jquery.min.js" type="text/javascript"></script>
+        <title>Missão Criativa</title>
+    </head>
+    <body>
+        <div id="tudo">
+            <div id="topo_menu">
+                <div id="cabecalho">
+                    <a href="http://www.missaocriativa.com.br"> <img  class="missao_logo" src="../imagens/sistem/missao_logo_star.png" ></a>
+                    <label class="page_titulo"> <h1 >Missão Criativa</h1></label>
+                   <!-- <a  class="nav_menu_bar lnk_config lnk_config" href="../page_controle/logout.php">sair</a>-->
+                  
+                   <a  class="nav_menu_bar lnk_config lnk_config" href="home.phtml">início</a>                     
+                   <!--<a  class="nav_menu_bar lnk_config lnk_config" href="../page/info.phtml">sobre nos</a>-->
+                  
+                </div><!--cabeçalho-->
+            </div><!--menu-->
+            <div class="conteudo">
+                <?php if (isset($_GET['acao'])) { ?>
+                    <form id="form"  action="<?php echo Util::crearLink('../page_controle/post_user.php', array('acao' => 'add')); ?>" method="post" enctype='multipart/form-data'>
+                        <div class="conteudo_form">
+
+                            <div id="info_login">
+                                <h3>Informações para login</h3>
+                                <label>
+                                    <output class="msg_erro_input_email msg_erro_form"></output><br>
+                                    <span> Email: <i>*</i></span><input onblur="validarEmail('',0)" type="email" class="input_text" id="email" name="email"  value="<?php echo $form->email ?>"  /></label>
+
+                                <label>
+                                    <output class="msg_erro_input_username"class="msg_erro_form"></output><br>
+                                    <span>Nome de Usuário:</span><input class="input_text"  id="username" type="text"  name="username" value="<?php echo $form->username ?>"/>
+                                </label>
+
+                                <div id="box_login_pw">
+                                    <label>
+                                        <output class="msg_erro_input_senha msg_erro_form"></output><br>
+                                        <span>Senha:<i>*</i></span><input onblur="dicaDeSenha(); " class="input_text" id="senha" type="password" placeholder="Mínimo de 6 caracteres"   name="senha" /></label>
+                                    <label>
+                                        <output class="msg_erro_input_c_senha msg_erro_form"></output><br>
+                                        <span> Confirma Senha:<i>*</i></span><input  onblur="validarSenha(); " class="input_text"  type="password" id="c_senha" name="c_senha" /></label>
+                                </div>
+                            </div>
+                            <input class="input_text" type="hidden" id="h_status" name="status"  value="<?php echo UsuarioControle::CLIENTE ?>"/>
+
+
+                            <label>
+                                <output class="msg_erro_input_nome msg_erro_form"></output><br>
+                                <span>Nome: <i>*</i></span><input class="input_text" type="text" id="nome" name="nome" value="<?php echo $form->nome ?>" /></label>
+                            <label>
+                                <output class="msg_erro_input_sobrenome msg_erro_form"></output><br>
+                                <span>Sobrenome:<i>*</i></span> <input class="input_text" id="sobrenome" name="sobrenome" /></label>
+                            <label>
+                                <output class="msg_erro_input_dt_nascimento msg_erro_form"></output><br>
+                                <span>Data Nascimento:<i>*</i></span><input class="input_text"  type="date" id="dt_nascimento" name="dt_nascimento" placeholder="dd/mm/aaaa" value="<?php echo $form->dt_nascimento ?>"  />
+                            </label>
+                            <input type="hidden"  name="validar_email" class="input_text" id="validar_email"  />
+
+                            <label>
+                                <span> Telefone: </span><input type="telefone" class="input_text" id="telefone" name="telefone" placeholder="(00) 000 000" value="<?php echo $form->telefone ?>"  />
+                            </label>
+
+                            <div class="info_localidade_correspondecia">
+                                <label>
+                                    <output class="msg_erro_input_uf msg_erro_form"></output><br>
+                                    <span> UF:<i>*</i> </span>
+                                    <select   id="uf" onchange="obterCidades();" name="uf" class="input_text" title="Escolha o estado">
+                                        <option class="selec_tipo"  value="0">----</option>
+                                    </select>
+
+                                </label>
+                                <label>
+                                    <output class="msg_erro_input_cidade msg_erro_form"></output><br>
+                                    <span> Cidade:<i>*</i> </span>
+                                    <select  id="cidade" name="cidade"  class="input_text" title="Escolha a cidade">
+                                        <option class="op_cidade"  value="0">----</option>
+                                    </select> </label>
+                                <label>
+                                    <output class="msg_erro_input_endereco msg_erro_form"></output><br>
+                                    <span> Endereço: <i>*</i></span><input type="text" class="input_text" id="endereco" name="endereco"  value="<?php echo $form->endereco ?>" />
+                                </label>
+                            </div><!-- informações para correspondencia-->
+
+                            <div id="form_propriedade_img">
+                                <div style="display: none;">
+                                    <input   class="input_text"  style="display: none;" type="file" id="img_file" name="img" />
+                                </div>
+                                <div id="preview_img">
+                                    <label>
+                                        <span>Imagem perfil:</span></label>
+                                    <div style="width: 200px; float: right;">
+                                        <input class="btn_remove" style="visibility: hidden;" id="remove_img" onclick="btn_remove_img(1);" type="button" value="Remover"/><br>
+                                    </div>
+                                    <label id ="preview_img_user"  >
+                                        <a onclick="mak_btn_img()"> <img  id ="img_item"src="<?php echo $img_perfil ;  ?>" /><br><i>clique na imagem</i></a>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="op_item">
+                                <input id="btn_salvar"  class="lnk_control" type="button" value="Salvar"/>
+                                <input   onclick="cancelar('../page/home.phtml');" type="button" class="lnk_control" value="Cancelar" />
+                            </div>
+
+                        </div>
+
+                    </form><!--Formulário-->
+                    <!--  Script para gerar as opções de Estados e cidades-->
+                    <script type="text/javascript">criarOpcaoUF();selectLocalidade(<?php echo $form->uf ?>); obterCidades(<?php echo $form->cidade ?>);
+                    </script>
+                    <script type="text/javascript">
+                        observeForm('<?php
+                $tipo_op = "Novo";
+                $op = "user";
+                echo $tipo_op . '\',\'' . $op
+                ?>');</script>
+                    <?php
+                } else {
+                    ?>
+                    <div id="dialog">
+                        <div class="conteudo_item">
+                            <div id="img_detalhes_item">
+                                <img id="img_perfil" src="<?php echo Util::DIR_IMAGEM_USUARIO.$form->img_perfil; ?>"/>
+                            </div>
+                            <div id="detalhes_item">
+                                <label class="detalhes_item">
+                                    <span id="status">Status:</span>
+                                    <output class="output_text"  ><?php echo UsuarioControle::getStatusFrom($form->status); ?></output>
+                                </label>
+
+                                <label class="detalhes_item">
+                                    <span id="tipo">Nome:</span>
+                                    <output class="output_text" id="nome" ><?php echo ( $form->nome . ' ' . $form->sobrenome); ?></output>
+                                </label>
+
+                                <label class="detalhes_item">
+                                    <span id="periodo">Nome de Usuario:</span>
+                                    <output class="output_text"  ><?php echo $form->username; ?></output>
+                                </label>
+
+                                <label class="detalhes_item">
+                                    <span >Email:</span>
+                                    <output class="output_text"  id="email"><?php echo $form->email; ?></output>
+                                </label>
+                                <label class="detalhes_item">
+                                    <span id="descricao">Telefone:</span>
+                                    <output class="output_text" id="telefone" ><?php echo $form->telefone; ?></output>
+                                </label>
+
+                                <label class="detalhes_item"><span>Nascimento:</span>
+                                    <output class="output_text" ><?php echo $form->dt_nascimento; ?></output></label>
+
+                                <label class="detalhes_item">
+                                    <span id="endereco">UF :</span>
+                                    <output class="output_text"  ><?php echo Util::getUF($form->uf); ?></output>
+                                </label>
+                                <label class="detalhes_item">
+                                    <span id="telefone">Cidade:</span>
+                                    <output class="output_text"  ><?php echo Util::getCidadeFromID($form->cidade); ?></output>
+
+                                </label>
+                                <label class="detalhes_item">
+                                    <span id="data">Endereço:</span>
+                                    <output class="output_text" ><?php echo $form->endereco; ?></output>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <?php
+                }
+                ?>
+            </div>
+            <?php require_once '../util/mascara.php'; ?>
+
+        </div>
+        <div id="rodade_pe">
+            <?php require_once '../util/rodape.php'; ?>
+        </div>
+        <?php if (isset($_SESSION['msg_box'])) { ?>
+            <script>msg_box('<?php echo $_SESSION['msg_box']; ?>')</script>
+            <?php unset($_SESSION['msg_box']);
+        } ?>
+
+        <script src="../script/sha512.js" type="text/javascript"></script>
+    </body>
+</html>

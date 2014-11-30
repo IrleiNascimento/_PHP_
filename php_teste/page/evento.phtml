@@ -1,0 +1,220 @@
+<?php
+/**
+ * Págima para adiccionar ou editar um evento
+ * @author Irlei
+ */
+require '../page_controle/is_sessao.php';
+require_once '../util/Util.php';
+require_once '../model_controle/EventoControle.php';
+require_once '../model/evento.php';
+require_once '../model/enum.php';
+
+$tipo_op = '';
+$acao = isset($_GET['acao']);
+
+//dados para o formulário
+$form = array('tipo' => 0,
+    'id' => 0,
+    'titulo' => '',
+    'url_img' => Util::IMAGEM_PADRAO_EVENTO,
+    'descricao' => '',
+    'data' => '',
+    'hora' => '',
+    'uf' => 0,
+    'cidade' => 0,
+    'endereco' => '',
+    'latitude' => '',
+    'longitude' => '',
+    'link' => '',
+    'telefone' => '',
+    'email' => '',
+    'rede_social' => '');
+
+
+if ($acao)
+    $tipo_op = 'Novo';
+$erros = array();
+$evento_controle = new EventoControle();
+$edicao = 0;
+$preview_img=  Util::DIR_IMAGEM_ITEM_PADRAO;
+//se for uma edição
+if (isset($_GET['id'])) {
+    $edicao = $_GET['id'];
+    $tipo_op = "Editar";
+}
+
+if (isset($_GET['add'])) {
+    $tipo_op = 'Detalhes do';
+}
+//se o formulario ja estiver sido submetido e retorna com mensagens de erros para o usuario
+if (!empty($_SESSION['msg_erro'])) {
+    $erros = $_SESSION['msg_erro'];
+    unset($_SESSION['msg_erro']);
+}
+
+if ($edicao) {
+    $form = $evento_controle->getArrayItem($edicao);
+if(file_exists(Util::DIR_IMAGEM_EVENTOS.$form['url_img']))
+        $preview_img = Util::DIR_IMAGEM_EVENTOS.$form['url_img'];
+} elseif (isset($_SESSION['item_tmp'])) {
+    $form = $_SESSION['item_tmp'];
+}
+
+//var_dump($form);
+//var_dump($erros);
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+    <head>
+        <link rel="shortcut icon" href="/imagens/missao_icon.png" type="image/x-icon" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></meta>
+        <link rel="stylesheet" href="../css/style.css" type="text/css"/>
+        <script src="../script/js.js" type="text/javascript"></script>
+        <script src="../script/ajax.js" type="text/javascript"></script>
+        <script src="../script/jquery.min.js" type="text/javascript"></script>
+        <title>Missão Criativa</title>
+    </head>
+    <body>
+        <div id="tudo">
+            <div id="topo_menu">
+                <div id="cabecalho">
+                    <a href="http://www.missaocriativa.com.br"><img  class="missao_logo" src="../imagens/sistem/missao_logo_star.png"></a>
+                    <h1><?php echo "$tipo_op  Eventos" ?> </h1>
+                      <?php if (isset($_GET['add'])) { $item_id =$_SESSION['item']['id']; ?>
+                    <a  class="nav_menu_bar_op nav_menu_bar"  href="javascript:popup_confirme(<?php echo $item_id.','.enum::EVENTO ?>);">excluir</a>
+                    <a  class="nav_menu_bar_op nav_menu_bar" href="<?php echo Util::crearLink('evento.phtml', array('acao' => 'edit', 'id' => $item_id)); ?>">editar</a>
+                    <?php } if (!$acao) { ?>
+                        <a  class="nav_menu_bar lnk_config" href="../page/servico.phtml">anúcios</a>
+                    <?php } elseif ($edicao || $tipo_op == 'Detalhes do') { ?>
+                        <a class="nav_menu_bar lnk_config" href="evento.phtml?acao=add">novo</a>
+                    <?php } if ($acao && $_GET['acao'] == 'add' || isset($_GET['add'])) { ?>
+                        <a  class="nav_menu_bar lnk_config" href="../page/relat_ev.php">todos</a>
+                        <a  class="nav_menu_bar lnk_config" href="evento.phtml">menu</a>
+                    <?php } ?>
+                    <a  class="nav_menu_bar lnk_config" href="home.phtml">início</a>
+
+                </div>
+            </div>
+            <div class="conteudo">
+                <?php if (!$acao && !isset($_GET['add'])) {// se nao não tem parametros então e tela de menu ?>
+                    <ul class="menu_home">
+                        <a href="evento.phtml?acao=add"> <li>Adicionar um evento </li></a>
+                        <a href="../page/relat_ev.php"><li>Exibir todos</li></a>
+                    </ul>
+                    <?php
+                } elseif ($acao) {
+                    //Se existe o parametro acao  o formulario será exibido
+                    ?> <form id="form" action="<?php echo Util::crearLink('../page_controle/post_item.php', array('acao' => $_GET['acao'], 'item' => enum::EVENTO)); ?>" method="post" enctype='multipart/form-data' >
+                        <div class="conteudo_form">
+                            <label>
+                                <output class="msg_erro_input_tipo msg_erro_form"></output>
+                                <span>Tipo:<i>*</i></span>
+                                <select id="tipo_ev" name="tipo" class="input_text" >
+                                    <option class="selec_tipo"  value="0">----</option>
+                                    <option class="selec_tipo"  value="1">CULTURAL</option>
+                                    <option class="selec_tipo"  value="2">FESTA</option>
+                                </select>
+                                <script>selectTipo(<?php echo $form['tipo']; ?>)</script>
+
+                            </label>
+
+                            <input class="input_text" type="hidden" id="id" name="id"  value="<?php echo $form['id']; ?>"/>
+                            <input class="input_text" type="hidden" id="url_img" name="url_img"  value="<?php echo $form['url_img']; ?>"/>
+                            <label>
+                                <output class="msg_erro_input_titulo msg_erro_form"></output><br>
+                                    <span>Título: <i>*</i></span><input class="input_text" type="text" id="titulo" name="titulo"  value="<?php echo $form['titulo']; ?>"/></label>
+                            <label>
+                                <output class="msg_erro_input_descricao msg_erro_form"></output><br>
+                                    <span>Descrição:<i>*</i></span> <textarea class="input_text"  id="descricao" name="descricao"  ><?php echo $form['descricao']; ?></textarea></label>
+
+                            <label>
+                                <output class="msg_erro_input_data msg_erro_form"></output><br>
+                                    <span> Data: <i>*</i></span><input class="input_text"  type="date" id="data" name="data" placeholder="dd/mm/aaaa" title="Informe a data do evento dia/mes/ano" value="<?php echo $form['data']; ?>"/></label>
+                            <label> <span> Hora: </span><input type="time" class="input_text"  id="hora" name="hora"  placeholder="hh:mm"  value="<?php echo $form['hora']; ?>"/></label>
+
+                            <div class="info_localidade_correspondecia">
+                                <label>
+                                    <output class="msg_erro_input_uf msg_erro_form"></output><br>
+                                        <span> UF:<i>*</i> </span>
+                                        <select   id="uf" onchange="obterCidades();" name="uf" class="input_text" title="Escolha o estado">
+                                            <option class="selec_tipo"  value="0">----</option>
+                                        </select>
+
+                                </label>
+                                <label>
+                                    <input type="hidden" class="input_text" name="h_cidade" id="h_cidade"  value="<?php $form['cidade']; ?>"/>
+                                    <output class="msg_erro_input_cidade msg_erro_form"></output><br>
+                                        <span> Cidade:<i>*</i> </span>
+                                        <select  id="cidade" onchange="atualizalocalidade(this.value)" name="cidade" class="input_text" title="Escolha a cidade">
+                                                 <option class="op_cidade"  value="0">----</option>
+                                        </select> </label>
+                                <label>
+                                    <output class="msg_erro_input_endereco msg_erro_form"></output><br>
+                                        <span> Endereço: <i>*</i></span><input type="text" class="input_text" id="endereco" name="endereco"  value="<?php echo $form['endereco']; ?>"/>
+                                </label>
+                            </div><!-- informações para correspondencia-->
+                            <label>  <span> Latitude: </span><input type="text" class="input_text"  id="latitude"name="latitude" value="<?php echo $form['latitude']; ?>"/></label>
+                            <label>  <span> Longitude: </span><input type="text" class="input_text" id="longitude" name="longitude" value="<?php echo $form['longitude'] ?>"/></label>
+
+
+                            <label>  <span>Link saber mais: </span>
+                                <input type="url" class="input_text" id="link" name="link"  value="<?php echo $form['link'] ?>"/>
+                            </label>
+
+                            <label>  <span> Telefone: </span><input type="tel" class="input_text" id="telefone"  name="telefone"  placeholder="(00) 000 000" value="<?php echo $form['telefone'] ?>" />
+                            </label>
+
+                            <label>
+                                <output class="msg_erro_input_email msg_erro_form"></output><br>
+                                    <span> Email: </span><input type="email" onblur="simpleEmail(this);" class="input_text" id="email" name="email"  value="<?php echo $form['email']; ?>" /></label>
+                            <label>  <span> Rede Social: </span><input type="url" class="input_text" id="rede_social" name="rede_social" placeholder="perfil do facebook ou google+" value="<?php echo $form['rede_social']; ?>"/></label>
+
+
+                            <div id="form_propriedade_img">
+                                <div style="display: none;">
+                                    <input   class="input_text"  style="display: none;" type="file" id="img_file" name="img" value="<?php echo $form['url_img']; ?>"/>
+                                </div>
+                                <div id="preview_img">
+                                    <label>
+                                        <span>Imagem:</span></label>
+                                    <div style="width: 200px; float: right;">
+                                        <input class="btn_remove" style="visibility: hidden;" id="remove_img" onclick="btn_remove_img(2);" type="button" value="Remover"/><br>
+                                    </div>
+                                    <label  id ="preview_img_user">
+                                        <a onclick="mak_btn_img()"> <img  id ="img_item" src="<?php echo $preview_img ?>" /><br><i>clique na imagem</i></a>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="op_item">
+                                <input  id="btn_salvar" type="button"  class="lnk_control"  value="Salvar"/>
+                                <input type="button" onclick=" cancelar('../page/home.phtml');" class="lnk_control" value="Cancelar"/>
+                            </div>
+                        </div>
+                    </form>
+                    <script type="text/javascript">criarOpcaoUF();selectLocalidade(<?php echo $form['uf'] ?>); obterCidades(<?php echo $form['cidade'] ?>);</script>
+
+                    <?php
+                } elseif (isset($_GET['add']) && $_GET['add'] == 'sucess') {
+                    // exbibe a tabela com os detatalhes do item
+                    require 'exibir_detalhes.php';
+                    unset($_GET['add']);
+                }
+                ?>
+
+            </div>
+            <?php require_once '../util/mascara.php'; ?>
+            <script  type="text/javascript">
+<?php $op = "evento"; ?>
+    observeForm('<?php echo $tipo_op . '\',\'' . $op ?>');
+            </script>
+        </div>
+        <div id="rodade_pe">
+            <?php require_once '../util/rodape.php';
+            if (isset($_SESSION['msg_box'])) {?>
+            <script>msg_box('<?php echo $_SESSION['msg_box']; ?>')</script>
+            <?php   unset($_SESSION['msg_box']); }?>
+        </div>
+    </body>
+</html>
+<?php unset($_SESSION['item_tmp'])?>
