@@ -9,14 +9,11 @@ require_once '../model/conexao.php';
  */
 class Util {
 
-   //const DOMINIO = 'http://www.missaocriativa.com.br/';
     const DOMINIO = 'http://localhost/';
 
-    //const DIR_APP ='http://www.missaocriativa.com.br/c_app/';
     const DIR_APP ='http://localhost/backup/c_app/';
 
-     // const PAG_LOGIN = 'www.missaocriativa.com.br/c_app/page/login.phtml';
-    
+
     const PAG_LOGIN ='localhost/backup/c_app/page/login.phtml';
     const DIR_IMAGEM_SERVICO = "../imagens/sv/";
     const DIR_IMAGEM_EVENTOS = "../imagens/ev/";
@@ -226,9 +223,13 @@ class Util {
                 return curl_error($ch);
             }
             curl_close($ch);
+
+
             return $result;
         }
         return null;
+
+
     }
 
 }
