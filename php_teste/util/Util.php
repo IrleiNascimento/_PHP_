@@ -11,10 +11,6 @@ class Util {
 
     const DOMINIO = 'http://localhost/';
 
-    const DIR_APP ='http://localhost/backup/c_app/';
-
-
-    const PAG_LOGIN ='localhost/backup/c_app/page/login.phtml';
     const DIR_IMAGEM_SERVICO = "../imagens/sv/";
     const DIR_IMAGEM_EVENTOS = "../imagens/ev/";
     const DIR_IMAGEM_USUARIO = "../imagens/u/";
